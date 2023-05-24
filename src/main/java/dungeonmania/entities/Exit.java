@@ -4,8 +4,10 @@ import dungeonmania.map.GameMap;
 import dungeonmania.util.Position;
 
 public class Exit extends Entity {
+    private boolean reached;
+
     public Exit(Position position) {
-        super(position.asLayer(Entity.ITEM_LAYER));
+        super(position.asLayer(Position.ITEM_LAYER));
     }
 
     @Override
@@ -15,16 +17,19 @@ public class Exit extends Entity {
 
     @Override
     public void onOverlap(GameMap map, Entity entity) {
-        return;
+        if (entity instanceof Player) {
+            reached = true;
+        }
     }
 
     @Override
     public void onMovedAway(GameMap map, Entity entity) {
-        return;
+        if (entity instanceof Player) {
+            reached = false;
+        }
     }
 
-    @Override
-    public void onDestroy(GameMap gameMap) {
-        return;
+    public boolean hasReached() {
+        return reached;
     }
 }

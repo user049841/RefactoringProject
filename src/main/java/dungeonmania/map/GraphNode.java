@@ -1,42 +1,32 @@
 package dungeonmania.map;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import dungeonmania.entities.Entity;
 import dungeonmania.util.Position;
 
-public class GraphNode {
+public class GraphNode implements Serializable {
     private Position position;
-    private List<Entity> entities = new ArrayList<>();
-
-    private int weight = 1;
-
-    public GraphNode(Entity entity, int weight) {
-        this(entity, entity.getPosition(), weight);
-    }
+    private HashSet<Entity> entities = new HashSet<>();
 
     public GraphNode(Entity entity) {
-        this(entity, entity.getPosition(), 1);
+        this(entity, entity.getPosition());
     }
 
-    public GraphNode(Entity entity, Position p, int weight) {
+    public GraphNode(Entity entity, Position p) {
         this.position = p;
         this.entities.add(entity);
-        this.weight = weight;
     }
 
     public boolean canMoveOnto(GameMap map, Entity entity) {
-        return entities.size() == 0 || entities.stream().allMatch(e -> e.canMoveOnto(map, entity));
-    }
-
-    public int getWeight() {
-        return weight;
+        return entities.stream().allMatch(e -> e.canMoveOnto(map, entity));
     }
 
     public void addEntity(Entity entity) {
-        if (!this.entities.contains(entity))
-            this.entities.add(entity);
+        entities.add(entity);
     }
 
     public void removeEntity(Entity entity) {
@@ -48,12 +38,11 @@ public class GraphNode {
     }
 
     public void mergeNode(GraphNode node) {
-        List<Entity> es = node.entities;
-        es.forEach(this::addEntity);
+        entities.addAll(node.entities);
     }
 
     public List<Entity> getEntities() {
-        return entities;
+        return new ArrayList<>(entities);
     }
 
     public Position getPosition() {

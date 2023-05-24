@@ -1,6 +1,8 @@
 package dungeonmania.response.models;
 
-public class RoundResponse {
+import java.io.Serializable;
+
+public class RoundResponse implements Serializable {
     private double deltaPlayerHealth;
     private double deltaEnemyHealth;
 

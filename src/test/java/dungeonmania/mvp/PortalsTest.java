@@ -90,16 +90,21 @@ public class PortalsTest {
         DungeonResponse res = controller.newGame(
             "d_PortalsTest_testNoEffectOnZombie", "c_PortalsTest_testNoEffectOnZombie");
         Position zombiePosition = TestUtils.getEntities(res, "zombie_toast").get(0).getPosition();
+        Position zombieStartPosition = new Position(2, 2);
         Position portalPosition = new Position(2, 1);
 
+        assertTrue(zombiePosition.equals(zombieStartPosition));
+        res = controller.tick(Direction.DOWN);
+        zombiePosition = TestUtils.getEntities(res, "zombie_toast").get(0).getPosition();
+        assertTrue(zombiePosition.equals(portalPosition));
+
         // Try at most 100 random movements
-        // Early exit if the zombie moves to the portal position
-        for (int i = 0; (i < 100 && !zombiePosition.equals(portalPosition)); ++i) {
+        for (int i = 0; i < 100; ++i) {
             res = controller.tick(Direction.DOWN);
             zombiePosition = TestUtils.getEntities(res, "zombie_toast").get(0).getPosition();
-            assertTrue(TestUtils.getManhattanDistance(zombiePosition, portalPosition) > 0);
+            assertTrue(zombiePosition.equals(zombieStartPosition) || zombiePosition.equals(portalPosition));
         }
-        assertTrue(TestUtils.getManhattanDistance(zombiePosition, portalPosition) > 0);
+        assertTrue(zombiePosition.equals(zombieStartPosition) || zombiePosition.equals(portalPosition));
     }
 
     @Test

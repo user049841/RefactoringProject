@@ -36,9 +36,16 @@ public class GameBuilder {
         return this;
     }
 
+    public GameBuilder setDungeon(JSONObject dungeon) {
+        this.dungeon = dungeon;
+        return this;
+    }
+
     public Game buildGame() {
         loadConfig();
-        loadDungeon();
+        if (dungeon == null) {
+            loadDungeon();
+        }
         if (dungeon == null && config == null) {
             return null; // something went wrong
         }

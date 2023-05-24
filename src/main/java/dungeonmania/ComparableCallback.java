@@ -1,5 +1,9 @@
 package dungeonmania;
 
+import java.io.Serializable;
+
+import dungeonmania.util.SerializableRunnable;
+
 /**
  * ComparableCallback is a wrapper around a Runnable
  * For every runnable r, we associate a value v to it
@@ -7,22 +11,21 @@ package dungeonmania;
  * the callback is performed based on one entity,
  * whose entityId is attached to the callback
  */
-public class ComparableCallback implements Comparable<ComparableCallback>, Runnable {
-
-    private Runnable r;
+public class ComparableCallback implements Comparable<ComparableCallback>, Runnable, Serializable {
+    private SerializableRunnable r;
     private int v;
     private String entityId; // entityId related to the current runnable
     private boolean isValid = true; // used to invalidate the current callback
     private boolean once = false; // some callback can only be used once
 
-    public ComparableCallback(Runnable r, int v, String entityId, boolean once) {
+    public ComparableCallback(SerializableRunnable r, int v, String entityId, boolean once) {
         this.r = r;
         this.v = v;
         this.entityId = entityId;
         this.once = once;
     }
 
-    public ComparableCallback(Runnable r, int v, String entityId) {
+    public ComparableCallback(SerializableRunnable r, int v, String entityId) {
         this(r, v, entityId, false);
     }
 

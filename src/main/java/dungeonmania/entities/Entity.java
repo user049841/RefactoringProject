@@ -1,17 +1,15 @@
 package dungeonmania.entities;
 
+import java.io.Serializable;
+import java.util.List;
+import java.util.UUID;
+
+import dungeonmania.Game;
 import dungeonmania.map.GameMap;
 import dungeonmania.util.Direction;
 import dungeonmania.util.Position;
 
-import java.util.UUID;
-
-public abstract class Entity {
-    public static final int FLOOR_LAYER = 0;
-    public static final int ITEM_LAYER = 1;
-    public static final int DOOR_LAYER = 2;
-    public static final int CHARACTER_LAYER = 3;
-
+public abstract class Entity implements Serializable {
     private Position position;
     private Position previousPosition;
     private Position previousDistinctPosition;
@@ -30,31 +28,36 @@ public abstract class Entity {
         return false;
     }
 
-    // use setPosition
-    @Deprecated(forRemoval = true)
-    public void translate(Direction direction) {
-        previousPosition = this.position;
-        this.position = Position.translateBy(this.position, direction);
-        if (!previousPosition.equals(this.position)) {
-            previousDistinctPosition = previousPosition;
-        }
+    public void onOverlap(GameMap map, Entity entity) {
+        return;
     }
 
-    // use setPosition
-    @Deprecated(forRemoval = true)
-    public void translate(Position offset) {
-        this.position = Position.translateBy(this.position, offset);
+    public void onMovedAway(GameMap map, Entity entity) {
+        return;
     }
 
-
-    public abstract void onOverlap(GameMap map, Entity entity);
-
-    public abstract void onMovedAway(GameMap map, Entity entity);
-
-    public abstract void onDestroy(GameMap gameMap);
+    public void onDestroy(Game game) {
+        return;
+    }
 
     public Position getPosition() {
         return position;
+    }
+
+    public int getXPosition() {
+        return position.getX();
+    }
+
+    public int getYPosition() {
+        return position.getY();
+    }
+
+    public List<Position> getAdjacentPositions() {
+        return position.getAdjacentPositions();
+    }
+
+    public List<Position> getCardinallyAdjacentPositions() {
+        return position.getCardinallyAdjacentPositions();
     }
 
     public Position getPreviousPosition() {
@@ -65,8 +68,20 @@ public abstract class Entity {
         return previousDistinctPosition;
     }
 
+    public void setPreviousDistinctPosition(Position position) {
+        previousDistinctPosition = position;
+    }
+
+    public void setPreviousPosition(Position position) {
+        previousPosition = position;
+    }
+
     public String getId() {
         return entityId;
+    }
+
+    public void setId(String id) {
+        entityId = id;
     }
 
     public void setPosition(Position position) {

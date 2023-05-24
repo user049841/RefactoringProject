@@ -1,0 +1,18 @@
+{
+    "entities": [
+        {
+            "type" : "player",
+            "x" : 1,
+            "y" : 1
+        },{
+            "type" : "zombie_toast_spawner",
+            "x" : 7,
+            "y" : 5
+        },{
+            "type": "exit",
+            "x": 15,
+            "y": 15
+        }
+    ],
+    "goal-condition": {"goal": "exit"}
+}

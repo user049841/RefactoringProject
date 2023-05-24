@@ -1,28 +1,22 @@
 package dungeonmania.entities.playerState;
 
+import java.io.Serializable;
+import java.util.function.Function;
+
+import dungeonmania.battles.BattleStatistics;
 import dungeonmania.entities.Player;
 
-public abstract class PlayerState {
+public abstract class PlayerState implements Serializable {
     private Player player;
-    private boolean isInvincible = false;
-    private boolean isInvisible = false;
 
-    PlayerState(Player player, boolean isInvincible, boolean isInvisible) {
+    PlayerState(Player player) {
         this.player = player;
-        this.isInvincible = isInvincible;
-        this.isInvisible = isInvisible;
     }
 
-    public boolean isInvincible() {
-        return isInvincible;
-    };
+    public abstract BattleStatistics applyBuff(BattleStatistics origin);
 
-    public boolean isInvisible() {
-        return isInvisible;
-    };
-
-    public Player getPlayer() {
-        return player;
+    protected void changePlayerState(Function<Player, PlayerState> newState) {
+        player.changeState(newState.apply(player));
     }
 
     public abstract void transitionInvisible();

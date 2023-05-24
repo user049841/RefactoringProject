@@ -4,15 +4,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import dungeonmania.Game;
 import dungeonmania.battles.BattleStatistics;
 import dungeonmania.battles.Battleable;
+import dungeonmania.entities.buildables.BuildableCost;
 import dungeonmania.entities.collectables.Bomb;
-import dungeonmania.entities.collectables.potions.InvincibilityPotion;
+import dungeonmania.entities.collectables.Key;
 import dungeonmania.entities.collectables.potions.Potion;
 import dungeonmania.entities.enemies.Enemy;
 import dungeonmania.entities.enemies.Mercenary;
 import dungeonmania.entities.inventory.Inventory;
 import dungeonmania.entities.inventory.InventoryItem;
+import dungeonmania.entities.inventory.cost.ItemCost;
 import dungeonmania.entities.playerState.BaseState;
 import dungeonmania.entities.playerState.PlayerState;
 import dungeonmania.map.GameMap;
@@ -46,18 +49,22 @@ public class Player extends Entity implements Battleable {
         return inventory.hasWeapon();
     }
 
-    public BattleItem getWeapon() {
-        return inventory.getWeapon();
+    public void useWeapon() {
+        inventory.getFirst(Weapon.class).use(this);
     }
 
-    public List<String> getBuildables() {
-        return inventory.getBuildables();
+    public List<String> getBuildables(GameMap map) {
+        List<String> buildables = BuildableCost.getBuildables(map, inventory);
+        return buildables;
     }
 
-    public boolean build(String entity, EntityFactory factory) {
-        InventoryItem item = inventory.checkBuildCriteria(this, true, entity.equals("shield"), factory);
-        if (item == null) return false;
-        return inventory.add(item);
+    public void build(String entity, EntityFactory factory) {
+        ItemCost cost = BuildableCost.getCost(entity);
+        if (cost != null && cost.isSatisfied(inventory)) {
+            cost.removeSpend(inventory);
+            inventory.add(factory.createBuildable(entity));
+            inventory.refundUnused();
+        }
     }
 
     public void move(GameMap map, Direction direction) {
@@ -71,8 +78,12 @@ public class Player extends Entity implements Battleable {
             if (entity instanceof Mercenary) {
                 if (((Mercenary) entity).isAllied()) return;
             }
-            map.getGame().battle(this, (Enemy) entity);
+            startBattle(map.getGame(), (Enemy) entity);
         }
+    }
+
+    public void startBattle(Game game, Enemy enemy) {
+        game.battle(this, enemy);
     }
 
     @Override
@@ -84,8 +95,12 @@ public class Player extends Entity implements Battleable {
         return inventory.getEntity(itemUsedId);
     }
 
-    public boolean pickUp(Entity item) {
-        return inventory.add((InventoryItem) item);
+    public <T> List<T> getItems(Class<T> clz) {
+        return inventory.getEntities(clz);
+    }
+
+    public void pickUp(InventoryItem item) {
+        inventory.add(item);
     }
 
     public Inventory getInventory() {
@@ -113,11 +128,7 @@ public class Player extends Entity implements Battleable {
             return;
         }
         inEffective = queue.remove();
-        if (inEffective instanceof InvincibilityPotion) {
-            state.transitionInvincible();
-        } else {
-            state.transitionInvisible();
-        }
+        inEffective.getTransition().accept(state);
         nextTrigger = currentTick + inEffective.getDuration();
     }
 
@@ -153,35 +164,10 @@ public class Player extends Entity implements Battleable {
     }
 
     public BattleStatistics applyBuff(BattleStatistics origin) {
-        if (state.isInvincible()) {
-            return BattleStatistics.applyBuff(origin, new BattleStatistics(
-                0,
-                0,
-                0,
-                1,
-                1,
-                true,
-                true));
-        } else if (state.isInvisible()) {
-            return BattleStatistics.applyBuff(origin, new BattleStatistics(
-                0,
-                0,
-                0,
-                1,
-                1,
-                false,
-                false));
-        }
-        return origin;
+        return state.applyBuff(origin);
     }
 
-    @Override
-    public void onMovedAway(GameMap map, Entity entity) {
-        return;
-    }
-
-    @Override
-    public void onDestroy(GameMap gameMap) {
-        return;
+    public boolean hasMatchingKey(Door door) {
+        return door.isMatchingKey(inventory.getFirst(Key.class));
     }
 }

@@ -1,101 +1,67 @@
 package dungeonmania.entities.inventory;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import dungeonmania.entities.BattleItem;
 import dungeonmania.entities.Entity;
-import dungeonmania.entities.EntityFactory;
-import dungeonmania.entities.Player;
-import dungeonmania.entities.buildables.Bow;
-import dungeonmania.entities.collectables.Arrow;
-import dungeonmania.entities.collectables.Key;
-import dungeonmania.entities.collectables.Sword;
-import dungeonmania.entities.collectables.Treasure;
-import dungeonmania.entities.collectables.Wood;
+import dungeonmania.entities.Weapon;
 
-public class Inventory {
-    private List<InventoryItem> items = new ArrayList<>();
+public class Inventory implements Serializable {
+    private ArrayList<InventoryItem> items = new ArrayList<>();
+    private ArrayList<InventoryItem> refundables = new ArrayList<>();
 
-    public boolean add(InventoryItem item) {
+    public void add(InventoryItem item) {
         items.add(item);
-        return true;
     }
 
     public void remove(InventoryItem item) {
         items.remove(item);
     }
 
-    public List<String> getBuildables() {
-
-        int wood = count(Wood.class);
-        int arrows = count(Arrow.class);
-        int treasure = count(Treasure.class);
-        int keys = count(Key.class);
-        List<String> result = new ArrayList<>();
-
-        if (wood >= 1 && arrows >= 3) {
-            result.add("bow");
-        }
-        if (wood >= 2 && (treasure >= 1 || keys >= 1)) {
-            result.add("shield");
-        }
-        return result;
+    public void removeAll(List<? extends InventoryItem> items) {
+        this.items.removeAll(items);
     }
 
-    public InventoryItem checkBuildCriteria(Player p, boolean remove, boolean forceShield, EntityFactory factory) {
+    public void setInventory(List<? extends InventoryItem> items) {
+        this.items.clear();
+        this.items.addAll(items);
+    }
 
-        List<Wood> wood = getEntities(Wood.class);
-        List<Arrow> arrows = getEntities(Arrow.class);
-        List<Treasure> treasure = getEntities(Treasure.class);
-        List<Key> keys = getEntities(Key.class);
+    public void addToRefund(InventoryItem item) {
+        refundables.add(item);
+    }
 
-        if (wood.size() >= 1 && arrows.size() >= 3 && !forceShield) {
-            if (remove) {
-                items.remove(wood.get(0));
-                items.remove(arrows.get(0));
-                items.remove(arrows.get(1));
-                items.remove(arrows.get(2));
-            }
-            return factory.buildBow();
+    public void clearRefundables() {
+        refundables.clear();
+    }
 
-        } else if (wood.size() >= 2 && (treasure.size() >= 1 || keys.size() >= 1)) {
-            if (remove) {
-                items.remove(wood.get(0));
-                items.remove(wood.get(1));
-                if (treasure.size() >= 1) {
-                    items.remove(treasure.get(0));
-                } else {
-                    items.remove(keys.get(0));
-                }
-            }
-            return factory.buildShield();
-        }
-        return null;
+    public void refundUnused() {
+        items.addAll(refundables);
+        refundables.clear();
     }
 
     public <T extends InventoryItem> T getFirst(Class<T> itemType) {
-        for (InventoryItem item : items)
-            if (itemType.isInstance(item)) return itemType.cast(item);
-        return null;
+        return items.stream().filter(itemType::isInstance).map(itemType::cast).findFirst().orElse(null);
     }
 
     public <T extends InventoryItem> int count(Class<T> itemType) {
-        int count = 0;
-        for (InventoryItem item : items)
-            if (itemType.isInstance(item)) count++;
-        return count;
+        return Math.toIntExact(items.stream().filter(itemType::isInstance).count());
     }
 
     public Entity getEntity(String itemUsedId) {
-        for (InventoryItem item : items)
-            if (((Entity) item).getId().equals(itemUsedId)) return (Entity) item;
-        return null;
+        return items
+                .stream()
+                .filter(Entity.class::isInstance)
+                .map(Entity.class::cast)
+                .filter(item -> item.getId().equals(itemUsedId))
+                .findFirst()
+                .orElse(null);
     }
 
     public List<Entity> getEntities() {
-        return items.stream().map(Entity.class::cast).collect(Collectors.toList());
+        return getEntities(Entity.class);
     }
 
     public <T> List<T> getEntities(Class<T> clz) {
@@ -103,14 +69,6 @@ public class Inventory {
     }
 
     public boolean hasWeapon() {
-        return getFirst(Sword.class) != null || getFirst(Bow.class) != null;
+        return items.stream().anyMatch(Weapon.class::isInstance);
     }
-
-    public BattleItem getWeapon() {
-        BattleItem weapon = getFirst(Sword.class);
-        if (weapon == null)
-            return getFirst(Bow.class);
-        return weapon;
-    }
-
 }

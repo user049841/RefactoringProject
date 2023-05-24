@@ -4,15 +4,13 @@ import dungeonmania.util.Position;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import dungeonmania.entities.Entity;
 import dungeonmania.entities.Player;
 import dungeonmania.entities.Switch;
-import dungeonmania.entities.inventory.InventoryItem;
 import dungeonmania.map.GameMap;
 
-public class Bomb extends Entity implements InventoryItem {
+public class Bomb extends Collectable {
     public enum State {
         SPAWNED,
         INVENTORY,
@@ -23,7 +21,7 @@ public class Bomb extends Entity implements InventoryItem {
     private State state;
     private int radius;
 
-    private List<Switch> subs = new ArrayList<>();
+    private ArrayList<Switch> subs = new ArrayList<>();
 
     public Bomb(Position position, int radius) {
         super(position);
@@ -40,47 +38,24 @@ public class Bomb extends Entity implements InventoryItem {
     }
 
     @Override
-    public boolean canMoveOnto(GameMap map, Entity entity) {
-        return true;
-    }
-
-    @Override
     public void onOverlap(GameMap map, Entity entity) {
         if (state != State.SPAWNED) return;
         if (entity instanceof Player) {
-            if (!((Player) entity).pickUp(this)) return;
             subs.stream().forEach(s -> s.unsubscribe(this));
-            map.destroyEntity(this);
+            super.onOverlap(map, entity);
         }
         this.state = State.INVENTORY;
     }
 
-    @Override
-    public void onMovedAway(GameMap map, Entity entity) {
-        return;
-    }
-
-    @Override
-    public void onDestroy(GameMap gameMap) {
-        return;
-    }
-
     public void onPutDown(GameMap map, Position p) {
-        translate(Position.calculatePositionBetween(getPosition(), p));
+        setPosition(p);
         map.addEntity(this);
         this.state = State.PLACED;
-        List<Position> adjPosList = getPosition().getCardinallyAdjacentPositions();
+        List<Position> adjPosList = getCardinallyAdjacentPositions();
         adjPosList.stream().forEach(node -> {
-            List<Entity> entities = map.getEntities(node)
-                                        .stream()
-                                        .filter(e -> (e instanceof Switch))
-                                        .collect(Collectors.toList());
-            entities.stream()
-                    .map(Switch.class::cast)
-                    .forEach(s -> s.subscribe(this, map));
-            entities.stream()
-                    .map(Switch.class::cast)
-                    .forEach(s -> this.subscribe(s));
+            List<Switch> switches = map.getEntities(node, Switch.class);
+            switches.forEach(s -> s.subscribe(this, map));
+            switches.forEach(this::subscribe);
         });
     }
 
@@ -93,11 +68,10 @@ public class Bomb extends Entity implements InventoryItem {
         int y = getPosition().getY();
         for (int i = x - radius; i <= x + radius; i++) {
             for (int j = y - radius; j <= y + radius; j++) {
-                List<Entity> entities = map.getEntities(new Position(i, j));
-                entities = entities.stream()
+                map.getEntities(new Position(i, j))
+                    .stream()
                     .filter(e -> !(e instanceof Player))
-                    .collect(Collectors.toList());
-                for (Entity e: entities) map.destroyEntity(e);
+                    .forEach(map::destroyEntity);
             }
         }
     }

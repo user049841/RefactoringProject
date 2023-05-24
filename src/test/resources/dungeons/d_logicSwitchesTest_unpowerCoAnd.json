@@ -1,0 +1,76 @@
+{
+  "entities": [
+    {
+      "x": 1,
+      "y": 0,
+      "type": "wire"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "type": "wire"
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "type": "wire"
+    },
+    {
+      "x": 4,
+      "y": 0,
+      "type": "wire"
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "type": "wire"
+    },
+    {
+      "x": 2,
+      "y": 1,
+      "type": "player"
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "type": "boulder"
+    },
+    {
+      "x": 4,
+      "y": 1,
+      "type": "switch"
+    },
+    {
+      "x": 5,
+      "y": 1,
+      "type": "switch"
+    },
+    {
+      "x": 1,
+      "y": 2,
+      "type": "light_bulb_off",
+      "logic": "co_and"
+    },
+    {
+      "x": 2,
+      "y": 2,
+      "type": "wire"
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "type": "wire"
+    },
+    {
+      "x": 4,
+      "y": 2,
+      "type": "wire"
+    },
+    {
+      "x": 5,
+      "y": 2,
+      "type": "wire"
+    }
+  ],
+  "goal-condition": {"goal": "exit"}
+}

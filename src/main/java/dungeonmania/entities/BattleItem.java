@@ -1,13 +1,13 @@
 package dungeonmania.entities;
 
-import dungeonmania.Game;
+import java.io.Serializable;
+
 import dungeonmania.battles.BattleStatistics;
 
 /**
  * Item has buff in battles
  */
-public interface BattleItem {
+public interface BattleItem extends Serializable {
     public BattleStatistics applyBuff(BattleStatistics origin);
-    public void use(Game game);
-    public int getDurability();
+    public void use(Player player);
 }

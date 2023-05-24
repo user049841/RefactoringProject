@@ -1,9 +1,18 @@
 package dungeonmania.entities.buildables;
 
-import dungeonmania.Game;
 import dungeonmania.battles.BattleStatistics;
+import dungeonmania.entities.Player;
+import dungeonmania.entities.Weapon;
+import dungeonmania.entities.collectables.Arrow;
+import dungeonmania.entities.collectables.Wood;
+import dungeonmania.entities.inventory.cost.AndItemCost;
+import dungeonmania.entities.inventory.cost.ItemCost;
+import dungeonmania.entities.inventory.cost.SingleItemCost;
 
-public class Bow extends Buildable  {
+public class Bow extends Buildable implements Weapon {
+    public static final ItemCost COST = new AndItemCost(
+        new SingleItemCost(Wood.class, 1),
+        new SingleItemCost(Arrow.class, 3));
 
     private int durability;
 
@@ -13,10 +22,10 @@ public class Bow extends Buildable  {
     }
 
     @Override
-    public void use(Game game) {
+    public void use(Player player) {
         durability--;
         if (durability <= 0) {
-            game.getPlayer().remove(this);
+            player.remove(this);
         }
     }
 
@@ -28,10 +37,5 @@ public class Bow extends Buildable  {
             0,
             2,
             1));
-    }
-
-    @Override
-    public int getDurability() {
-        return durability;
     }
 }

@@ -5,14 +5,16 @@ import dungeonmania.battles.BattleStatistics;
 import dungeonmania.battles.Battleable;
 import dungeonmania.entities.Entity;
 import dungeonmania.entities.Player;
+import dungeonmania.entities.enemies.movements.Movement;
 import dungeonmania.map.GameMap;
 import dungeonmania.util.Position;
 
 public abstract class Enemy extends Entity implements Battleable {
     private BattleStatistics battleStatistics;
+    private Movement movementStrategy;
 
     public Enemy(Position position, double health, double attack) {
-        super(position.asLayer(Entity.CHARACTER_LAYER));
+        super(position.asLayer(Position.CHARACTER_LAYER));
         battleStatistics = new BattleStatistics(
                 health,
                 attack,
@@ -23,7 +25,7 @@ public abstract class Enemy extends Entity implements Battleable {
 
     @Override
     public boolean canMoveOnto(GameMap map, Entity entity) {
-        return entity instanceof Player;
+        return true;
     }
 
     @Override
@@ -35,20 +37,25 @@ public abstract class Enemy extends Entity implements Battleable {
     public void onOverlap(GameMap map, Entity entity) {
         if (entity instanceof Player) {
             Player player = (Player) entity;
-            map.getGame().battle(player, this);
+            player.startBattle(map.getGame(), this);
         }
     }
 
     @Override
-    public void onDestroy(GameMap map) {
-        Game g = map.getGame();
-        g.unsubscribe(getId());
+    public void onDestroy(Game game) {
+        game.unsubscribe(getId());
+        game.incrementEnemiesDestroyed();
     }
 
-    @Override
-    public void onMovedAway(GameMap map, Entity entity) {
-        return;
+    public void move(Game game) {
+        movementStrategy.move(game.getMap(), this);
     }
 
-    public abstract void move(Game game);
+    public Movement getMovement() {
+        return movementStrategy;
+    }
+
+    public void setMovement(Movement movement) {
+        movementStrategy = movement;
+    }
 }

@@ -1,6 +1,8 @@
 package dungeonmania.battles;
 
-public class BattleRound {
+import java.io.Serializable;
+
+public class BattleRound implements Serializable {
     private double deltaSelfHealth;
     private double deltaTargetHealth;
 

@@ -1,6 +1,8 @@
 package dungeonmania.response.models;
 
-public final class ItemResponse {
+import java.io.Serializable;
+
+public final class ItemResponse implements Serializable {
     private final String id;
     private final String type;
 

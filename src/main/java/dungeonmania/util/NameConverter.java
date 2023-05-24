@@ -3,9 +3,10 @@ package dungeonmania.util;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import dungeonmania.entities.Door;
+import dungeonmania.entities.DoorType;
 import dungeonmania.entities.Entity;
 import dungeonmania.entities.Portal;
+import dungeonmania.entities.logic.LightBulb;
 
 public class NameConverter {
     public static String toSnakeCase(Entity entity) {
@@ -14,10 +15,15 @@ public class NameConverter {
             String color = "_" + ((Portal) entity).getColor().toLowerCase();
             return nameBasic + color;
         }
-        if (entity instanceof Door) {
-            String open = ((Door) entity).isOpen() ? "_open" : "";
+        if (entity instanceof DoorType) {
+            String open = ((DoorType) entity).isOpen() ? "_open" : "";
             return nameBasic + open;
         }
+        if (entity instanceof LightBulb) {
+            String active = ((LightBulb) entity).isActivated() ? "_on" : "_off";
+            return nameBasic + active;
+        }
+
         return nameBasic;
     }
 

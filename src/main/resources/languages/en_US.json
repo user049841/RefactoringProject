@@ -8,6 +8,7 @@
             "new_game": "Start New Game",
             "load_game": "Load Game",
             "quit_game": "Quit Game",
+            "generate_dungeon": "Generate New Game",
             "credits": "Credits"
         },
         "game_mode": "Game Mode",

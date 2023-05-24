@@ -172,7 +172,7 @@ public class ZombieTest {
         );
         // cardinally adjacent: true, has sword: true
         res = assertDoesNotThrow(() -> dmc.interact(spawnerId));
-        assertEquals(1, TestUtils.countType(res, "zombie_toast_spawner"));
+        assertEquals(0, TestUtils.countType(res, "zombie_toast_spawner"));
     }
 
     private List<EntityResponse> getZombies(DungeonResponse res) {

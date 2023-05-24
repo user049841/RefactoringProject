@@ -6,26 +6,11 @@ import dungeonmania.util.Position;
 
 public class Wall extends Entity {
     public Wall(Position position) {
-        super(position.asLayer(Entity.CHARACTER_LAYER));
+        super(position.asLayer(Position.CHARACTER_LAYER));
     }
 
     @Override
     public boolean canMoveOnto(GameMap map, Entity entity) {
         return entity instanceof Spider;
-    }
-
-    @Override
-    public void onOverlap(GameMap map, Entity entity) {
-        return;
-    }
-
-    @Override
-    public void onMovedAway(GameMap map, Entity entity) {
-        return;
-    }
-
-    @Override
-    public void onDestroy(GameMap gameMap) {
-        return;
     }
 }

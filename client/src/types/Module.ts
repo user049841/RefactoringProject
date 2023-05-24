@@ -29,6 +29,7 @@ export type LocalisationFile = {
       load_game: string;
       credits: string;
       quit_game: string;
+      generate_dungeon: string;
     };
     game_mode: string;
     on_exit: {

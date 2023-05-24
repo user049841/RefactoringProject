@@ -1,6 +1,8 @@
 package dungeonmania.entities.collectables.potions;
 
-import dungeonmania.battles.BattleStatistics;
+import java.util.function.Consumer;
+
+import dungeonmania.entities.playerState.PlayerState;
 import dungeonmania.util.Position;
 
 public class InvisibilityPotion extends Potion {
@@ -11,15 +13,7 @@ public class InvisibilityPotion extends Potion {
     }
 
     @Override
-    public BattleStatistics applyBuff(BattleStatistics origin) {
-        return BattleStatistics.applyBuff(origin, new BattleStatistics(
-                0,
-                0,
-                0,
-                1,
-                1,
-                false,
-                false));
+    public Consumer<PlayerState> getTransition() {
+        return PlayerState::transitionInvisible;
     }
-
 }

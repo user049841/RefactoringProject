@@ -342,10 +342,9 @@ public class BattleTest {
         RoundResponse firstRound = battle.getRounds().get(0);
 
         // check the bow was used twice in the round using calculations
-        // Note that the bow does not add extra damage to the attack
         int playerAttack = Integer.parseInt(TestUtils.getValueFromConfigFile("player_attack", config));
         // Delta health is negative so take negative here
-        assertEquals(playerAttack / 5, -firstRound.getDeltaEnemyHealth(), 0.001);
+        assertEquals(2 * playerAttack / 5, -firstRound.getDeltaEnemyHealth(), 0.001);
     }
 
     @Test

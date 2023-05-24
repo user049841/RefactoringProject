@@ -1,10 +1,21 @@
 package dungeonmania.entities.buildables;
 
-
-import dungeonmania.Game;
 import dungeonmania.battles.BattleStatistics;
+import dungeonmania.entities.BattleItem;
+import dungeonmania.entities.Player;
+import dungeonmania.entities.collectables.Key;
+import dungeonmania.entities.collectables.Treasure;
+import dungeonmania.entities.collectables.Wood;
+import dungeonmania.entities.inventory.cost.AndItemCost;
+import dungeonmania.entities.inventory.cost.ItemCost;
+import dungeonmania.entities.inventory.cost.OrItemCost;
+import dungeonmania.entities.inventory.cost.SingleItemCost;
 
-public class Shield extends Buildable {
+public class Shield extends Buildable implements BattleItem {
+    public static final ItemCost COST = new AndItemCost(
+        new SingleItemCost(Wood.class, 2),
+        new OrItemCost(new SingleItemCost(Treasure.class, 1), new SingleItemCost(Key.class, 1)));
+
     private int durability;
     private double defence;
 
@@ -15,10 +26,10 @@ public class Shield extends Buildable {
     }
 
     @Override
-    public void use(Game game) {
+    public void use(Player player) {
         durability--;
         if (durability <= 0) {
-            game.getPlayer().remove(this);
+            player.remove(this);
         }
     }
 
@@ -31,11 +42,4 @@ public class Shield extends Buildable {
             1,
             1));
     }
-
-    @Override
-    public int getDurability() {
-        return durability;
-    }
-
-
 }

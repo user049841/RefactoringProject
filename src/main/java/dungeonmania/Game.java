@@ -1,7 +1,9 @@
 package dungeonmania;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.PriorityQueue;
+import java.util.stream.Stream;
 import java.util.UUID;
 
 import dungeonmania.battles.BattleFacade;
@@ -10,32 +12,38 @@ import dungeonmania.entities.EntityFactory;
 import dungeonmania.entities.Interactable;
 import dungeonmania.entities.Player;
 import dungeonmania.entities.collectables.Bomb;
-import dungeonmania.entities.collectables.Treasure;
 import dungeonmania.entities.collectables.potions.Potion;
 import dungeonmania.entities.enemies.Enemy;
+import dungeonmania.entities.logic.LogicalEntity;
+import dungeonmania.entities.logic.Wire;
 import dungeonmania.exceptions.InvalidActionException;
 import dungeonmania.goals.Goal;
 import dungeonmania.map.GameMap;
 import dungeonmania.util.Direction;
+import dungeonmania.util.Position;
+import dungeonmania.util.SerializableRunnable;
 
-public class Game {
+public class Game implements Serializable {
     private String id;
     private String name;
     private Goal goals;
     private GameMap map;
     private Player player;
     private BattleFacade battleFacade;
-    private int initialTreasureCount;
+    private int treasureCollectedCount = 0;
+    private int enemiesDestroyedCount = 0;
     private EntityFactory entityFactory;
     private boolean isInTick = false;
+    private ArrayList<GameState> gameStates = new ArrayList<>();
     public static final int PLAYER_MOVEMENT = 0;
-    public static final int PLAYER_MOVEMENT_CALLBACK = 1;
+    public static final int POTION_EFFECT_UPDATE = 1;
     public static final int AI_MOVEMENT = 2;
-    public static final int AI_MOVEMENT_CALLBACK = 3;
 
     private int tickCount = 0;
-    private PriorityQueue<ComparableCallback> sub = new PriorityQueue<>();
-    private PriorityQueue<ComparableCallback> addingSub = new PriorityQueue<>();
+    private int currentTick = 0;
+    private ArrayList<ComparableCallback> sub = new ArrayList<>();
+    private ArrayList<ComparableCallback> addingSub = new ArrayList<>();
+    private ArrayList<SerializableRunnable> timeTravels = new ArrayList<>();
 
     public Game(String dungeonName) {
         this.name = dungeonName;
@@ -47,9 +55,9 @@ public class Game {
         this.id = UUID.randomUUID().toString();
         map.init();
         this.tickCount = 0;
+        this.currentTick = 0;
         player = map.getPlayer();
-        register(() -> player.onTick(tickCount), PLAYER_MOVEMENT, "potionQueue");
-        initialTreasureCount = map.getEntities(Treasure.class).size();
+        register(() -> player.onTick(tickCount), POTION_EFFECT_UPDATE, "potionQueue");
     }
 
     public Game tick(Direction movementDirection) {
@@ -82,17 +90,21 @@ public class Game {
      * @param enemy
      */
     public void battle(Player player, Enemy enemy) {
+        if (this.player != player) {
+            return;
+        }
+
         battleFacade.battle(this, player, enemy);
-        if (player.getBattleStatistics().getHealth() <= 0) {
+        if (player.getHealth() <= 0) {
             map.destroyEntity(player);
         }
-        if (enemy.getBattleStatistics().getHealth() <= 0) {
+        if (enemy.getHealth() <= 0) {
             map.destroyEntity(enemy);
         }
     }
 
     public Game build(String buildable) throws InvalidActionException {
-        List<String> buildables = player.getBuildables();
+        List<String> buildables = player.getBuildables(map);
         if (!buildables.contains(buildable)) {
             throw new InvalidActionException(String.format("%s cannot be built", buildable));
         }
@@ -109,23 +121,55 @@ public class Game {
             throw new InvalidActionException("Entity cannot be interacted");
         }
         registerOnce(
-            () -> ((Interactable) e).interact(player, this), PLAYER_MOVEMENT, "playerBuildsItem");
+            () -> ((Interactable) e).interact(player, this), PLAYER_MOVEMENT, "playerInteractsWithEntity");
         tick();
         return this;
+    }
+
+    public Game timeTravel(int ticks) {
+        currentTick = Math.max(tickCount - ticks, 0);
+        map.getEntities().forEach(entity -> {
+            unsubscribe(entity.getId());
+            map.removeNode(entity);
+        });
+        GameState gameState = gameStates.get(currentTick);
+        gameState.getEntities().stream()
+            .filter(entity -> !(entity instanceof Player))
+            .forEach(this::addEntity);
+        addEntity(map.getPlayer());
+        addEntity(entityFactory.createOlderPlayer(this, gameStates, currentTick, tickCount));
+        map.initTimeTravel();
+        return this;
+    }
+
+    public void addTimeTravel(int ticks) {
+        timeTravels.add(() -> timeTravel(ticks));
     }
 
     public <T extends Entity> long countEntities(Class<T> type) {
         return map.countEntities(type);
     }
 
-    public void register(Runnable r, int priority, String id) {
+    public <T extends Entity> List<T> getEntities(Class<T> type) {
+        return map.getEntities(type);
+    }
+
+    public List<Entity> getEntities(Position p) {
+        return map.getEntities(p);
+    }
+
+    public void addEntity(Entity entity) {
+        map.addEntity(entity);
+    }
+
+    public void register(SerializableRunnable r, int priority, String id) {
         if (isInTick)
             addingSub.add(new ComparableCallback(r, priority, id));
         else
             sub.add(new ComparableCallback(r, priority, id));
     }
 
-    public void registerOnce(Runnable r, int priority, String id) {
+    public void registerOnce(SerializableRunnable r, int priority, String id) {
         if (isInTick)
             addingSub.add(new ComparableCallback(r, priority, id, true));
         else
@@ -133,32 +177,49 @@ public class Game {
     }
 
     public void unsubscribe(String id) {
-        for (ComparableCallback c : sub) {
-            if (id.equals(c.getId())) {
-                c.invalidate();
-            }
-        }
-        for (ComparableCallback c : addingSub) {
-            if (id.equals(c.getId())) {
-                c.invalidate();
-            }
-        }
+        Stream.concat(sub.stream(), addingSub.stream())
+            .filter(c -> id.equals(c.getId()))
+            .forEach(ComparableCallback::invalidate);
     }
 
     public int tick() {
+        if (currentTick == tickCount)
+            gameStates.add(GameState.saveState(map));
+
         isInTick = true;
+        updateLogicalEntities();
+        sub.sort(null);
         sub.forEach(s -> s.run());
         isInTick = false;
         sub.addAll(addingSub);
-        addingSub = new PriorityQueue<>();
+        addingSub = new ArrayList<>();
         sub.removeIf(s -> !s.isValid());
         tickCount++;
+        currentTick++;
+
+        timeTravels.forEach(SerializableRunnable::run);
+        timeTravels.clear();
+
         // update the weapons/potions duration
         return tickCount;
     }
 
+    private void updateLogicalEntities() {
+        for (Wire wire : map.getEntities(Wire.class)) {
+            wire.setNotified(false);
+        }
+        for (LogicalEntity logicalEntity : map.getEntities(LogicalEntity.class)) {
+            logicalEntity.setActiveOnPriorTick(logicalEntity.isActivated());
+            logicalEntity.resetActivatedThisTickCount();
+        }
+    }
+
     public int getTick() {
         return this.tickCount;
+    }
+
+    public int getCurrentTick() {
+        return this.currentTick;
     }
 
     public String getId() {
@@ -217,8 +278,19 @@ public class Game {
         this.battleFacade = battleFacade;
     }
 
-    public int getInitialTreasureCount() {
-        return initialTreasureCount;
+    public void incrementTreasureCollectedCount() {
+        ++treasureCollectedCount;
     }
 
+    public int getTreasureCollectedCount() {
+        return treasureCollectedCount;
+    }
+
+    public void incrementEnemiesDestroyed() {
+        ++enemiesDestroyedCount;
+    }
+
+    public int getEnemiesDestroyedCount() {
+        return enemiesDestroyedCount;
+    }
 }
