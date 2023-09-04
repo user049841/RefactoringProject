@@ -2,7 +2,7 @@
 Refactor a large codebase whilst maintaining a high level of documentation.
 # How to run
 Run the App.java file in src/main/java.
-# Project Details.
+# Project Details
 The initial project was a dungeon exploring game with a few different enemies, items, and a goal to reach the exit.
 Various refactors were done including:
   - Making the enemies, items, and goals more extensible
