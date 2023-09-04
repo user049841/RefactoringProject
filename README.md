@@ -9,4 +9,5 @@ Various refactors were done including:
   - Using design patterns such as strategy pattern instead of duplicating code.
   - Creating new enemies, items, and goals.
   - Adding a simple combination system where items could be combined to form other ones.
+
 Tests were written for each new feature, available in src/test/java/.
